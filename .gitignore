@@ -1,0 +1,8 @@
+makefile
+make_release
+make_debug
+mandelbrot
+compile_commands.json
+__pycache__
+.cache
+src/build/

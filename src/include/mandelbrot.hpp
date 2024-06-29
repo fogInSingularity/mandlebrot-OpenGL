@@ -13,11 +13,24 @@ namespace Mandelbort {
     static const int kOpenGLMinorVarsion = 3;
     static const int kWindowWidth = 1024;
     static const int kWindowHeight = 1024;
-    static const char* kWindowTitle = "Mandelbrot";
+    static const char *kWindowTitle = "Mandelbrot";
 
-    GLFWwindow* SetUpRender();
-    Shader CompileShaders();
-    void Render(Shader shader_prog);
-}
+    GLFWwindow *SetUpAndGetWindow();
+
+    class Render {
+      public:
+        Render(GLFWwindow *window, const char *vertex_shader_file_name,
+                const char *fragment_shader_file_name);
+        ~Render();
+        void RenderFrame();
+        int CheckWindowShouldClose();
+      private:
+        GLFWwindow *window_;
+        Shader shader_;
+        const float *fill_screan_;
+        GLuint vao_;
+        GLuint vbo_;
+    };
+} // namespace Mandelbort
 
 #endif // MANDELBROT_HPP_

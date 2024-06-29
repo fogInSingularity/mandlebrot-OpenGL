@@ -6,3 +6,6 @@ compile_commands.json
 __pycache__
 .cache
 src/build/
+perf.data
+perf.data.old
+vgcore.*

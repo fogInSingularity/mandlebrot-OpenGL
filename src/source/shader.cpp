@@ -1,5 +1,6 @@
 #include "shader.hpp"
 
+#include <iostream>
 #include <cassert>
 #include <string>
 #include <fstream>
@@ -9,6 +10,9 @@
 #include <GLFW/glfw3.h>
 
 #include "opengl_log.hpp"
+
+#define DEBUG_PRINT \
+    std::cerr << "debug " << __FILE__ << ':' << __LINE__ << std::endl;
 
 // static ----------------------------------------------------------------------
 
@@ -20,16 +24,25 @@ static GLint CompileShaderProgram(const char* vertex_shader_file_name,
 // Shader ----------------------------------------------------------------------
 
 Shader::Shader(const char* vertex_shader_file_name,
-               const char* fragment_shader_file_name) {
+               const char* fragment_shader_file_name) {                
     assert(vertex_shader_file_name != nullptr);
     assert(fragment_shader_file_name != nullptr);
+#if defined (OBJECTS_CTORDTOR_DUMP)
+    std::cerr << "shader constructor" << std::endl;
+#endif // DEBUG
 
     shader_program_id_ = CompileShaderProgram(vertex_shader_file_name, 
-                                             fragment_shader_file_name);
+                                              fragment_shader_file_name); 
 }
 
 Shader::~Shader() {
-    glDeleteProgram(shader_program_id_); $
+#if defined (OBJECTS_CTORDTOR_DUMP)
+    std::cerr << "shader destructor" << std::endl;
+#endif // DEBUG
+    if (shader_program_id_ != 0) {
+        glDeleteProgram(shader_program_id_); $
+    }
+    shader_program_id_ = 0;
 }
 
 GLint Shader::GetShaderProgramId() const {

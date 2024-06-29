@@ -7,12 +7,11 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
-#define GRAPHICS_DEBUG_SHADER 1
-#define GRAPHICS_DEBUG_CALLS 1
+#include "debug_cfg.hpp"
 
-// debug 
-#ifdef GRAPHICS_DEBUG_CALLS
-    #define $ GLLogError(__FILE__, __LINE__); 
+// debug
+#if defined(GRAPHICS_DEBUG_CALLS)
+    #define $ GLLogError(__FILE__, __LINE__);
 #else
     #define $ ;
 #endif // GRAPHICS_DEBUG_CALLS

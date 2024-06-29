@@ -6,19 +6,14 @@
 #include "mandelbrot.hpp"
 
 int main(const int argc, const char** argv) {
-    GLFWwindow* window = Mandelbort::SetUpRender();
-    if (window == nullptr) { assert(0 && "cant open window"); } //FIXME
+    GLFWwindow* window = Mandelbort::SetUpAndGetWindow();
 
-    Shader shader_prog = Mandelbort::CompileShaders();
+    Mandelbort::Render render(window, "src/shaders/vert_shad.vert",
+                             "src/shaders/frag_shad.frag");
 
-    while (!glfwWindowShouldClose(window)) {
-        Mandelbort::Render(shader_prog);
-        
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+    while (!render.CheckWindowShouldClose()) {
+        render.RenderFrame();
     }
-
-    glfwTerminate();
 
     return 0;
 }

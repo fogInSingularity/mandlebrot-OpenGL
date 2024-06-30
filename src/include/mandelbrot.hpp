@@ -8,13 +8,14 @@
 
 #define UNUSED __attribute__((unused))
 
-namespace Mandelbort {
+namespace Mandelbrot {
     static const int kOpenGLMajorVarsion = 3;
     static const int kOpenGLMinorVarsion = 3;
     static const int kWindowWidth = 1024;
     static const int kWindowHeight = 1024;
     static const char *kWindowTitle = "Mandelbrot";
 
+    void TellAboutControls();
     GLFWwindow *SetUpAndGetWindow();
 
     class Render {
@@ -31,6 +32,6 @@ namespace Mandelbort {
         GLuint vao_;
         GLuint vbo_;
     };
-} // namespace Mandelbort
+} // namespace Mandelbrot
 
 #endif // MANDELBROT_HPP_

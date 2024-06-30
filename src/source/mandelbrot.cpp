@@ -5,7 +5,10 @@
 
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
-#include "glm/vec3.hpp"
+
+#include "fwd.hpp"
+#include "gtc/matrix_transform.hpp"
+#include "gtc/type_ptr.hpp"
 
 #include "opengl_log.hpp"
 #include "shader.hpp"
@@ -22,13 +25,17 @@ static void KeyboardCallback(GLFWwindow* window,
                              int scancode,
                              int action, 
                              int mods);
+static glm::mat4 GetRotationMatrix();
 
-static glm::vec3 camera_pos(0.0f, 0.0f, 0.0f);
+static glm::vec4 camera_pos(0.0f, 0.0f, 0.0f, 0.0f);
+static glm::ivec3 camera_rotation(0, 0, 0);
+
 static float scale  = 1.0f;
 static float offset = 0.03f;
 static float dim_ratio = 1.0f;
-
 static const float multiplier = 1.05f;
+static const int angle_velocity = 1;
+
 static const int kNDimensions = 3;
 static const int kNTrianles   = 2;
 
@@ -41,15 +48,32 @@ static const float fill_screan[] = { 1,  1, 0,
 
 // global ----------------------------------------------------------------------
 
-GLFWwindow* Mandelbort::SetUpAndGetWindow() {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, Mandelbort::kOpenGLMajorVarsion);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, Mandelbort::kOpenGLMinorVarsion);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+// rotating x y z
+// translate x y z
+// translate w
+void Mandelbrot::TellAboutControls() {
+    std::cout << "rotation  x: +Q -W" << std::endl
+              << "rotation  y: +A -S" << std::endl
+              << "rotation  z: +Z -X" << std::endl
+              << "translate x: +E -R" << std::endl
+              << "translate y: +D -F" << std::endl
+              << "translate z: +C -V" << std::endl
+              << "translate w: +1 -2" << std::endl
+              << "zoom       :  +  _" << std::endl
+              << "To default :  0   " << std::endl
+              << "Quit       : Esc  " << std::endl; 
+}
 
-    GLFWwindow* window = glfwCreateWindow(Mandelbort::kWindowWidth, 
-                                          Mandelbort::kWindowHeight,
-                                          Mandelbort::kWindowTitle, 
+GLFWwindow* Mandelbrot::SetUpAndGetWindow() {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, Mandelbrot::kOpenGLMajorVarsion);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, Mandelbrot::kOpenGLMinorVarsion);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE); //NOTE
+
+    GLFWwindow* window = glfwCreateWindow(Mandelbrot::kWindowWidth, 
+                                          Mandelbrot::kWindowHeight,
+                                          Mandelbrot::kWindowTitle, 
                                           nullptr, 
                                           nullptr);
     glfwMakeContextCurrent(window);
@@ -64,13 +88,15 @@ GLFWwindow* Mandelbort::SetUpAndGetWindow() {
 
 // Render ----------------------------------------------------------------------
 
-Mandelbort::Render::Render(GLFWwindow* window,
+Mandelbrot::Render::Render(GLFWwindow* window,
                            const char* vertex_shader_file_name,
                            const char* fragment_shader_file_name)
     : shader_(vertex_shader_file_name, fragment_shader_file_name) {
 #if defined(OBJECTS_CTORDTOR_DUMP)
     std::cerr << "render constructor" << std::endl;
 #endif // DEBUG
+
+    // glEnable(GL_FRAMEBUFFER_SRGB); //NOTE
 
     window_      = window;
     fill_screan_ = fill_screan;
@@ -102,7 +128,7 @@ Mandelbort::Render::Render(GLFWwindow* window,
     glBindVertexArray(0); $
 };
 
-Mandelbort::Render::~Render() {
+Mandelbrot::Render::~Render() {
 #if defined(OBJECTS_CTORDTOR_DUMP)
     std::cerr << "render destructor" << std::endl;
 #endif // DEBUG
@@ -114,7 +140,7 @@ Mandelbort::Render::~Render() {
     glfwTerminate();
 }
 
-void Mandelbort::Render::RenderFrame() {
+void Mandelbrot::Render::RenderFrame() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); $ // set clear color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); $ // clear screen
 
@@ -122,7 +148,7 @@ void Mandelbort::Render::RenderFrame() {
 
     int translate_id = glGetUniformLocation(shader_.GetShaderProgramId(),
                                             "translate_parameter"); $ 
-    glUniform4f(translate_id, camera_pos.x, camera_pos.y, camera_pos.z, 0.0f); $
+    glUniform4f(translate_id, camera_pos.x, camera_pos.y, camera_pos.z, camera_pos.w); $
 
     int scale_id = glGetUniformLocation(shader_.GetShaderProgramId(), 
                                         "scale_parameter"); $       
@@ -130,7 +156,12 @@ void Mandelbort::Render::RenderFrame() {
 
     int dim_ratio_id = glGetUniformLocation(shader_.GetShaderProgramId(), 
                                             "dim_ratio"); $       
-    glUniform1f(dim_ratio_id, dim_ratio);
+    glUniform1f(dim_ratio_id, dim_ratio); $
+
+    glm::mat4 rotate_mat = GetRotationMatrix();
+    int rotation_id = glGetUniformLocation(shader_.GetShaderProgramId(),
+                                           "rotation"); $
+    glUniformMatrix4fv(rotation_id, 1, GL_FALSE, glm::value_ptr(rotate_mat));
 
     glBindVertexArray(vao_); $ 
     glDrawArrays(GL_TRIANGLES, 0, kNDimensions * kNTrianles); $
@@ -139,11 +170,24 @@ void Mandelbort::Render::RenderFrame() {
     glfwPollEvents();
 };
 
-int Mandelbort::Render::CheckWindowShouldClose() {
+int Mandelbrot::Render::CheckWindowShouldClose() {
     return glfwWindowShouldClose(window_);
 }
 
 // static ----------------------------------------------------------------------
+
+static glm::mat4 GetRotationMatrix() {
+    glm::mat4 rotate_mat_x = glm::mat4(1.0f);
+    glm::mat4 rotate_mat_y = glm::mat4(1.0f);
+    glm::mat4 rotate_mat_z = glm::mat4(1.0f);
+
+    rotate_mat_x = glm::rotate(rotate_mat_x, glm::radians((float)camera_rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    rotate_mat_y = glm::rotate(rotate_mat_y, glm::radians((float)camera_rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    rotate_mat_z = glm::rotate(rotate_mat_z, glm::radians((float)camera_rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    return rotate_mat_x * rotate_mat_y * rotate_mat_z;
+}
+
+// callbacks -------------------------------------------------------------------
 
 static void FrameBufferSizeCallBack(GLFWwindow* window, int width, int height) {
     assert(window != nullptr);
@@ -164,34 +208,74 @@ static void KeyboardCallback(GLFWwindow* window,
     (void)mods;
 
     switch (key) {
-    case GLFW_KEY_Q:
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            break;
+        case GLFW_KEY_0:
+            camera_pos = glm::vec4(0.0f);
+            camera_rotation = glm::ivec3(0, 0, 0);
+            scale = 1.0f;
+            offset = 0.03f;
+            break;
+        // rotation 
+        case GLFW_KEY_Q:
+            camera_rotation.x += angle_velocity;
+            break;
+        case GLFW_KEY_W:
+            camera_rotation.x -= angle_velocity;
+            break;
+        case GLFW_KEY_A:
+            camera_rotation.y += angle_velocity;
+            break;
+        case GLFW_KEY_S:
+            camera_rotation.y -= angle_velocity;
+            break;
+        case GLFW_KEY_Z:
+            camera_rotation.z += angle_velocity;
+            break;
+        case GLFW_KEY_X:
+            camera_rotation.z -= angle_velocity;
+            break;
+        // translation
+        case GLFW_KEY_E:
+            camera_pos.x -= offset;
+            break;
+        case GLFW_KEY_R:
+            camera_pos.x += offset;
+            break;
+        case GLFW_KEY_D:
+            camera_pos.y -= offset;
+            break;
+        case GLFW_KEY_F:
+            camera_pos.y += offset;
+            break;
+        case GLFW_KEY_C:
+            camera_pos.z -= offset;
+            break;
+        case GLFW_KEY_V:
+            camera_pos.z += offset;
+            break;
+        case GLFW_KEY_1:
+            camera_pos.w -= offset;
+            break;
+        case GLFW_KEY_2:
+            camera_pos.w += offset;
+            break;
+        // zoom
+        case GLFW_KEY_EQUAL:
+            scale /= multiplier;
+            offset /= multiplier;
+            break;
+        case GLFW_KEY_MINUS:
+            scale *= multiplier;
+            offset *= multiplier;
+            break;
+        // other keys
+        default:
+        #if defined(KEY_PRESSES_DUMP)
+            std::cerr << "unknown key: " << key << std::endl;
+        #endif // DEBUG
         break;
-    case GLFW_KEY_UP:
-        camera_pos.y += offset;
-        break;
-    case GLFW_KEY_DOWN:
-        camera_pos.y -= offset;
-        break;
-    case GLFW_KEY_RIGHT:
-        camera_pos.x += offset;
-        break;
-    case GLFW_KEY_LEFT:
-        camera_pos.x -= offset;
-        break;
-    case GLFW_KEY_EQUAL:
-        scale /= multiplier;
-        offset /= multiplier;
-        break;
-    case GLFW_KEY_MINUS:
-        scale *= multiplier;
-        offset *= multiplier;
-        break;
-    default:
-    #if defined(KEY_PRESSES_DUMP)
-        std::cerr << "unknown key: " << key << std::endl;
-    #endif // DEBUG
-      break;
     }
 #if defined(KEY_PRESSES_DUMP)
     std::cerr << "------------------------" << std::endl

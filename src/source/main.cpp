@@ -1,15 +1,17 @@
-#include <cassert>
+#include "mandelbrot.hpp"
 
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
-#include "mandelbrot.hpp"
+#include <cassert>
 
 int main(const int argc, const char** argv) {
-    GLFWwindow* window = Mandelbort::SetUpAndGetWindow();
+    Mandelbrot::TellAboutControls();
+    GLFWwindow* window = Mandelbrot::SetUpAndGetWindow();
 
-    Mandelbort::Render render(window, "src/shaders/vert_shad.vert",
-                             "src/shaders/frag_shad.frag");
+    Mandelbrot::Render render(window, 
+                              "src/shaders/vert_shad.vert",
+                              "src/shaders/mandelbrot.frag");
 
     while (!render.CheckWindowShouldClose()) {
         render.RenderFrame();

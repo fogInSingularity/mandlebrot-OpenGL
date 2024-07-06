@@ -2,36 +2,21 @@
 in vec4 color;
 out vec4 frag_color;
 
-#define kMaxIter 128.0f
+#define kMaxIterInt 128
+#define kMaxIterFloat (float(kMaxIterInt))
+#define kMaxIterRev (1 / kMaxIterFloat)
 
 void main() {
-    frag_color = color;
+    int iter = 0;
 
-// --------------------
-    float x = 0;
-    float y = 0;
-
-    float iter = 0;
-
-    float real = color.x;
-    float imag = color.y;
-
-    float x_mul = 0;
-    float y_mul = 0;
-
-    while ((x_mul + y_mul < 4.0f) && (iter <= kMaxIter)) {
-        float x_temp = x_mul - y_mul + real;
-        y = 2 * x * y + imag;
-        x = x_temp;
-
-        x_mul = x * x;
-        y_mul = y * y;
-
+    vec2 z = vec2(color.x, color.y);
+    while ((dot(z,z) < 4.0f) && (iter <= kMaxIterInt)) {
+        z = vec2(z.x * z.x - z.y * z.y + color.x, 
+             2 * z.x * z.y + color.y);
         iter++;
     }
-// --------------------
 
-    frag_color.x = iter / kMaxIter;
-    frag_color.y = iter / kMaxIter;
-    frag_color.z = iter / kMaxIter;
+    float color_ratio = (iter * kMaxIterRev);
+
+    frag_color = vec4(color_ratio, color_ratio, color_ratio, 0.0f);
 }

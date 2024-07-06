@@ -6,8 +6,8 @@ warn_str = """# ------------------------------------------
 """
 
 main_make_filename = "makefile"
-make_debug_filename = "make_debug"
-make_release_filename = "make_release"
+make_debug_filename = "debug.mk"
+make_release_filename = "release.mk"
 
 # ------------------------------------------------------------------------------
 

@@ -1,6 +1,8 @@
 makefile
 make_release
 make_debug
+release.mk
+debug.mk
 mandelbrot
 compile_commands.json
 __pycache__

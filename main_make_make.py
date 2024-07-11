@@ -8,11 +8,12 @@ all:
 
 release:
 \t@echo 'Compiler $(CXX)'
-\tmake -f make_release CXX=$(CXX) -j8
+\tmake -f release.mk CXX=$(CXX) -j8
 
 debug:
 \t@echo 'Compiler $(CXX)'
-\tmake -f make_debug CXX=$(CXX) -j8
+\tmake -f debug.mk CXX=$(CXX) -j8
 clean:
 \t{}
 """.format(clean_cmd)
+# FIXME

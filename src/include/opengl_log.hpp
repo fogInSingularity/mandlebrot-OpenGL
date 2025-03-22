@@ -4,10 +4,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "glad/glad.h"
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
-
-#include "debug_cfg.hpp"
 
 // debug
 #if defined(GRAPHICS_DEBUG_CALLS)

@@ -1,11 +1,13 @@
 #include "mandelbrot.hpp"
 
-#include "glad/glad.h"
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <cassert>
 
 int main(const int argc, const char** argv) {
+    (void)argc; (void)argv;
+    
     Mandelbrot::TellAboutControls();
     GLFWwindow* window = Mandelbrot::SetUpAndGetWindow();
 

@@ -3,12 +3,12 @@
 #include <cassert>
 #include <iostream>
 
-#include "glad/glad.h"
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "fwd.hpp"
-#include "gtc/matrix_transform.hpp"
-#include "gtc/type_ptr.hpp"
+#include <glm/fwd.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "opengl_log.hpp"
 #include "shader.hpp"
@@ -78,7 +78,7 @@ GLFWwindow* Mandelbrot::SetUpAndGetWindow() {
                                           nullptr);
     glfwMakeContextCurrent(window);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { assert(0); }
+    if (!gladLoadGL(glfwGetProcAddress)) { assert(0 && "unable to load GL"); }
 
     glfwSetFramebufferSizeCallback(window, FrameBufferSizeCallBack);
     glfwSetKeyCallback(window, KeyboardCallback);
@@ -121,7 +121,7 @@ Mandelbrot::Render::Render(GLFWwindow* window,
                           GL_FLOAT, 
                           GL_FALSE,
                           sizeof(float) * kNDimensions, 
-                          (void*)0); $ 
+                          nullptr); $ 
     glEnableVertexAttribArray(0); $
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); $ 

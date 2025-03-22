@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "glad/glad.h"
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include "opengl_log.hpp"

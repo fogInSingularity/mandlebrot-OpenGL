@@ -1,6 +1,9 @@
 #include "opengl_log.hpp"
 
 #include <cassert>
+#include <cstdio>
+
+#include <glad/gl.h>
 
 // debug -----------------------------------------------------------------------
 void GLLogError(const char* file_name, size_t line) {

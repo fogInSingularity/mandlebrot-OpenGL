@@ -1,3 +1,8 @@
 # Mandelbrot render using OpenGL
 
-work in progress
+## Build and run
+
+```bash
+cmake -B build -S .
+cmake --build build
+```
